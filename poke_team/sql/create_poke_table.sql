@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS pokemon;
+CREATE TABLE pokemon (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    n TEXT NOT NULL UNIQUE,
+    base_experience INTEGER DEFAULT 0,
+    height INTEGER NOT NULL CHECK(height>0),
+    dex_order INTEGER DEFAULT 0,
+    w INTEGER NOT NULL CHECK(w>0),
+    species TEXT NOT NULL
+
+);
