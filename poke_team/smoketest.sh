@@ -46,6 +46,72 @@ check_db() {
   fi
 }
 
+
+###############################################
+#
+# User Checks
+#
+###############################################
+
+create_account() {
+  username=$1
+  password=$2
+
+  echo "Creating account ($username, $password)..."
+  curl -s -X POST "$BASE_URL/create-account" -H "Content-Type: application/json" \
+    -d "{\"username\":\"$username\", \"password\":\"$password\}" | grep -q '"status": "success"'
+
+  if [ $? -eq 0 ]; then
+    echo "Account added successfully."
+  else
+    echo "Failed to add song."
+    exit 1
+  fi
+}
+
+update_password(){
+  username=$1
+  password=$2
+
+  echo "Updating password for user $username..."
+  response=$(curl -s -X GET "$BASE_URL/update-password" \
+    -H "Content-Type: application/json" \
+    -d "{\"username\":\"$username\", \"password\":\"$password\"}")
+
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Password of user ($username) updated successfully."
+  else
+    echo "Failed to update password for user ($username)"
+    exit 1
+  fi
+  }
+
+login() {
+  username=$1
+  password=$2
+
+  echo "Logging in user $username"
+
+  response=$(curl -s -X GET "$BASE_URL/login" \
+    -H "Content-Type: application/json" \
+    -d "{\"username\":\"$username\", \"password\":\"$password\"}")
+
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "User $username logged in successfully"
+    if [ "$ECHO_JSON" = true ]; then
+      echo "Login JSON:"
+      echo "$response" | jq .
+    fi
+  else
+    echo "User $username failed to log in"
+    exit 1
+  fi
+}
+
 # Health checks
 check_health
 check_db
+
+create_account "user" "pass"
+update_password "user" "updated pass"
+login "user" "updated pass"
