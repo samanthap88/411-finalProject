@@ -4,6 +4,8 @@ from app.utils.db_utils import check_database_connection, check_table_exists
 # from flask_cors import CORS
 
 from app.models import user_model
+from app.models import poke_model
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -162,7 +164,167 @@ def login() -> Response:
         app.logger.error("Failed to login user: %s", str(e))
         return make_response(jsonify({'error': str(e)}), 500)
 
+@app.route('/api/create-pokemon-by-name/<string:name>', methods=['POST'])
+def create_pokemon_by_name(name: str) -> Response:
+    """
+    Route create a base pokemon with its name
 
+    Args:
+        name (str): Name of the pokemon
+    
+    Returns:
+        pokemon_id (int) : Database ID of the pokemon, for use in other methods
+    
+    Raises:
+        500 error if fail.
+    """
+    app.logger.info(f"Creating " + name)
+    try:
+        id = poke_model.create_pokemon_by_name(name)
+        return make_response(jsonify({'status': 'success', 'pokemon_id': id}), 200)
+    except Exception as e:
+        app.logger.error(f"Error creating pokemon: {e}")
+        return make_response(jsonify({'error': str(e)}), 500)    
+
+@app.route('/api/get-pokemon-by-id/<int:id>', methods=['GET'])
+def get_pokemond_by_id(id: int) -> Response:
+    """
+    Route get a pokemon by its id
+
+    Args:
+        id (int): ID of the pokemon
+    
+    Returns:
+        pokemon (Pokemon) : Pokemon object corresponding to the ID
+    
+    Raises:
+        500 error if fail.
+    """
+    app.logger.info(f"Fetching " + str(id))
+    try:
+        pokemon = poke_model.get_pokemon_by_id(id)
+        return make_response(jsonify({'status': 'success', 'pokemon': pokemon}), 200)
+    except Exception as e:
+        app.logger.error(f"Error creating pokemon: {e}")
+        return make_response(jsonify({'error': str(e)}), 500)    
+
+@app.route('/api/add-move-to-pokemon', methods=['POST'])
+def add_move_to_pokemon() -> Response:
+    """
+    Route add a move to a pokemon
+
+    Expected JSON Input:
+        - id (int): ID of the pokemon
+        - name (str): name of the move
+    
+    Raises:
+        500 error if fail.
+    """
+    try:
+        data = request.json
+        id = data.get('id')
+        name = data.get('name')
+
+        app.logger.info("Adding " + name + " to " + id)
+
+        poke_model.add_move_to_pokemon(id, name)
+        return make_response(jsonify({'status': 'success'}), 200)
+    except Exception as e:
+        app.logger.error(f"Error creating pokemon: {e}")
+        return make_response(jsonify({'error': str(e)}), 500) 
+
+@app.route('/api/remove-move-from-pokemon', methods=['POST'])
+def remove_move_from_pokemon() -> Response:
+    """
+    Route remove a move from a pokemon
+
+    Expected JSON Input:
+        - id (int): ID of the pokemon
+        - name (str): name of the move
+    
+    Raises:
+        500 error if fail.
+    """
+    try:
+        data = request.json
+        id = data.get('id')
+        name = data.get('name')
+
+        app.logger.info("Removing " + name + " from " + id)
+
+        poke_model.remove_move_from_pokemon(id, name)
+        return make_response(jsonify({'status': 'success'}), 200)
+    except Exception as e:
+        app.logger.error(f"Error creating pokemon: {e}")
+        return make_response(jsonify({'error': str(e)}), 500) 
+
+@app.route('/api/replace-move-of-pokemon', methods=['POST'])
+def replace_move_of_pokemon() -> Response:
+    """
+    Route replace a move for a pokemon
+
+    Expected JSON Input:
+        - id (int): ID of the pokemon
+        - old_name (str): name of the move to replace
+        - new_name (str) name of the new move
+    
+    Raises:
+        500 error if fail.
+    """
+    try:
+        data = request.json
+        id = data.get('id')
+        old = data.get('old_name')
+        new = data.get('new_name')
+
+        app.logger.info("Replacing " + old + " with " + new + " for " + id)
+
+        poke_model.replace_move_of_pokemon(id, old, new)
+        return make_response(jsonify({'status': 'success'}), 200)
+    except Exception as e:
+        app.logger.error(f"Error creating pokemon: {e}")
+        return make_response(jsonify({'error': str(e)}), 500) 
+
+@app.route('/api/distribute-effort-values', methods=['POST'])
+def distribute_effort_values() -> Response:
+    """
+    Route distribute evs for a pokemon
+
+    Expected JSON Input:
+        - id (int): ID of the pokemon
+        - evs (List[int]): list of evs (hp, atk, def, sp atk, sp def, spd)
+    
+    Raises:
+        500 error if fail.
+    """
+    try:
+        data = request.json
+        id = data.get('id')
+        evs = data.get('evs')
+
+        app.logger.info("Distributing evs for " + id)
+
+        poke_model.distribute_effort_values(id, evs)
+        return make_response(jsonify({'status': 'success'}), 200)
+    except Exception as e:
+        app.logger.error(f"Error creating pokemon: {e}")
+        return make_response(jsonify({'error': str(e)}), 500) 
+
+@app.route('/api/clear-poke', methods=['DELETE'])
+def clear_poke() -> Response:
+    """
+    Route to clear all Pokemon (recreates the table).
+
+    Returns:
+        JSON response indicating success of the operation or error message.
+    """
+    try:
+        app.logger.info("Clearing the Pokemon")
+        poke_model.clear_poke()
+        return make_response(jsonify({'status': 'success'}), 200)
+    except Exception as e:
+        app.logger.error(f"Error clearing catalog: {e}")
+        return make_response(jsonify({'error': str(e)}), 500)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

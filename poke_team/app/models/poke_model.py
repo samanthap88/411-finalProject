@@ -57,6 +57,9 @@ def create_pokemon_by_name(name):
     Args:
         name (string): The name of the pokemon.
 
+    Returns:
+        id (int): DB ID of the pokemon
+
     Raises:
         ValueError: if pokemon does not exist
         sqlite3.Error: For any other database errors
@@ -89,6 +92,7 @@ def create_pokemon_by_name(name):
         global_id += 1
 
         create_pokemon_by_object(pokemon)
+        return pokemon.id
     else:
         logger.error("Pokemon does not exist: %s", name)
         raise ValueError("This pokemon does not exist")
@@ -346,3 +350,25 @@ def distribute_effort_values(pokemon_id, evs):
         logger.error("Database error: %s", str(e))
         raise e
 
+def clear_poke() -> None:
+    """
+    Recreates the pokemon table, effectively deleting all pokemon.
+
+    Raises:
+        sqlite3.Error: If any database error occurs.
+    """
+    try:
+        with open(os.getenv("SQL_CREATE_POKE_TABLE_PATH", "/sql/create_poke_table.sql"), "r") as fh:
+            create_table_script = fh.read()
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.executescript(create_table_script)
+            conn.commit()
+
+            global global_id
+            global_id = 0
+            logger.info("Pokemon cleared successfully.")
+
+    except sqlite3.Error as e:
+        logger.error("Database error while clearing meals: %s", str(e))
+        raise e
