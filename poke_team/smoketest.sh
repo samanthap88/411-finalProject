@@ -114,9 +114,9 @@ update_password(){
 #
 check_health
 check_db
-create_account "user" "pass"
-update_password "user" "new"
-login "user" "new"
+# create_account "user" "pass"
+# update_password "user" "new"
+# login "user" "new"
 
 ###############################################
 #
@@ -210,12 +210,15 @@ replace_move_of_pokemon() {
 }
 
 distribute_effort_values() {
-  id=$1
-  evs=$2
+  local id="$1"
+  local evs_array=("${@:2}")
 
-  echo "Distributing EVs ($evs) to Pokemon with ID ($id)..."
+  evs_json=$(printf '%s,' "${evs_array[@]}")
+  evs_json="[${evs_json%,}]"
+
+  echo "Distributing EVs ($evs_json) to Pokemon with ID ($id)..."
   curl -s -X POST "$BASE_URL/distribute-effort-values" -H "Content-Type: application/json" \
-    -d "{\"id\": $id, \"evs\": $evs}" | grep -q '"status": "success"'
+    -d "{\"id\": $id, \"evs\": $evs_json}" | grep -q '"status": "success"'
 
   if [ $? -eq 0 ]; then
     echo "EVs distributed successfully."
@@ -225,12 +228,15 @@ distribute_effort_values() {
   fi
 }
 
+evs=(50 60 70 80 90 100)
+
 clear_poke
 
 create_pokemon_by_name "ditto"
-create_pokemon_by_name "blaziken"
+create_pokemon_by_name "pikachu"
 get_pokemon_by_id 1
-add_move_to_pokemon 1 "blaze_kick"
-remove_move_from_pokemon 1 "peck"
-replace_move_of_pokemon 1 "peck "flamethrower"
-distribute_effort_values 1 [4, 4, 4, 4, 4, 4]
+add_move_to_pokemon 1 "tail-whip"
+add_move_to_pokemon 1 "quick-attack"
+remove_move_from_pokemon 1 "quick-attack"
+replace_move_of_pokemon 1 "tail-whip" "thunderbolt"
+distribute_effort_values 1 "${evs[@]}"

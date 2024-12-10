@@ -225,7 +225,7 @@ def add_move_to_pokemon() -> Response:
         id = data.get('id')
         name = data.get('name')
 
-        app.logger.info("Adding " + name + " to " + id)
+        app.logger.info("Adding " + name + " to " + str(id))
 
         poke_model.add_move_to_pokemon(id, name)
         return make_response(jsonify({'status': 'success'}), 200)
@@ -250,7 +250,7 @@ def remove_move_from_pokemon() -> Response:
         id = data.get('id')
         name = data.get('name')
 
-        app.logger.info("Removing " + name + " from " + id)
+        app.logger.info("Removing " + name + " from " + str(id))
 
         poke_model.remove_move_from_pokemon(id, name)
         return make_response(jsonify({'status': 'success'}), 200)
@@ -277,7 +277,7 @@ def replace_move_of_pokemon() -> Response:
         old = data.get('old_name')
         new = data.get('new_name')
 
-        app.logger.info("Replacing " + old + " with " + new + " for " + id)
+        app.logger.info("Replacing " + old + " with " + new + " for " + str(id))
 
         poke_model.replace_move_of_pokemon(id, old, new)
         return make_response(jsonify({'status': 'success'}), 200)
@@ -302,7 +302,7 @@ def distribute_effort_values() -> Response:
         id = data.get('id')
         evs = data.get('evs')
 
-        app.logger.info("Distributing evs for " + id)
+        app.logger.info("Distributing evs for " + str(id))
 
         poke_model.distribute_effort_values(id, evs)
         return make_response(jsonify({'status': 'success'}), 200)
