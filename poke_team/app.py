@@ -92,7 +92,6 @@ def create_account() -> Response:
         app.logger.error("Failed to add user: %s", str(e))
         return make_response(jsonify({'error': str(e)}), 500)
 
-
 @app.route('/api/update-password', methods=['POST'])
 def update_password() -> Response:
     """
