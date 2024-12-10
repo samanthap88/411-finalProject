@@ -59,24 +59,25 @@ create_account() {
 
   echo "Creating account ($username, $password)..."
   curl -s -X POST "$BASE_URL/create-account" -H "Content-Type: application/json" \
-    -d "{\"username\":\"$username\", \"password\":\"$password\}" | grep -q '"status": "success"'
+    -d "{\"username\":\"$username\", \"password\":\"$password\"}" | grep -q '"status": "success"'
 
   if [ $? -eq 0 ]; then
     echo "Account added successfully."
   else
-    echo "Failed to add song."
+    echo "Failed to add account."
     exit 1
   fi
 }
 
+
 update_password(){
   username=$1
-  password=$2
+  new=$2
 
   echo "Updating password for user $username..."
-  response=$(curl -s -X GET "$BASE_URL/update-password" \
+  response=$(curl -s -X POST "$BASE_URL/update-password" \
     -H "Content-Type: application/json" \
-    -d "{\"username\":\"$username\", \"password\":\"$password\"}")
+    -d "{\"username\":\"$username\", \"new\":\"$new\"}")
 
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Password of user ($username) updated successfully."
@@ -86,13 +87,13 @@ update_password(){
   fi
   }
 
-login() {
+  login() {
   username=$1
   password=$2
 
   echo "Logging in user $username"
 
-  response=$(curl -s -X GET "$BASE_URL/login" \
+  response=$(curl -s -X POST "$BASE_URL/login" \
     -H "Content-Type: application/json" \
     -d "{\"username\":\"$username\", \"password\":\"$password\"}")
 
@@ -111,7 +112,6 @@ login() {
 # Health checks
 check_health
 check_db
-
-create_account "user" "pass"
-update_password "user" "updated pass"
-login "user" "updated pass"
+create_user "user" "pass"
+update_password "user" "new"
+login "user" "new"

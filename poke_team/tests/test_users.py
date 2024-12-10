@@ -106,9 +106,9 @@ def test_update_password(mock_cursor):
     update_password(username="bucket", password="hehehe")
 
     expected_query = normalize_whitespace("""
-    UPDATE users SET hashed_passwd = ? SET salt = ? WHERE username = ? AND SELECT username FROM users WHERE username = ?
+    UPDATE users SET hashed_passwd = ?, salt = ? WHERE username = ?
     """)
-    actual_query = normalize_whitespace(mock_cursor.execute.call_args_list[0][0][0])
+    actual_query = normalize_whitespace(mock_cursor.execute.call_args_list[1][0][0])
 
     assert expected_query==actual_query, "The SQL query did not match the expected structure."        
 

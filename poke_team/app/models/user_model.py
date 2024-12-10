@@ -85,16 +85,20 @@ def update_password(username:str, password: str) -> None:
             salt = bcrypt.gensalt()
             hashed_passwd = bcrypt.hashpw(password.encode('utf-8'), salt)
             cursor = conn.cursor()
-            cursor.execute("UPDATE users SET hashed_passwd = ? SET salt = ? WHERE username = ? AND SELECT username FROM users WHERE username = ?", (username, hashed_passwd, salt, username,))
+            
+            cursor.execute("SELECT username FROM users WHERE username = ?", (username, ))
             row = cursor.fetchone()
             
             if row:
-                logger.info("Password of user %s successfully updated", username)
+                
+                logger.info("Password of user %s updated", username)
+                
             else:
                 logger.info("User %s not found", username)
                 raise ValueError(f"user {username} not found")
-
             
+            
+            cursor.execute("UPDATE users SET hashed_passwd = ?, salt = ? WHERE username = ?", (hashed_passwd, salt, username, ) )
             conn.commit()
 
     except sqlite3.Error as e:
