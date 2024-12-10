@@ -112,6 +112,7 @@ update_password(){
 # Health checks
 check_health
 check_db
-create_user "user" "pass"
+
+create_account "user" "pass"
 update_password "user" "new"
 login "user" "new"
