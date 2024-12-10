@@ -6,12 +6,7 @@ CREATE TABLE pokemon (
     id INTEGER PRIMARY KEY,
     game_id INTEGER,
     name TEXT,
-    base_experience INTEGER,
-    height INTEGER,
-    order INTEGER,
-    weight INTEGER,
     ability TEXT,
-    species TEXT,
     total_effort INTEGER
 );
 

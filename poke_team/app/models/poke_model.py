@@ -30,15 +30,11 @@ class Stats:
 
 @dataclass
 class Pokemon:
+    id: int
     game_id: int
     name: str
-    base_experience: int
-    height: int
-    order: int
-    weight: int
     ability: str
     learned_moves: List[str]
-    species: str
     stats: Stats
     total_effort: int
 
@@ -56,13 +52,10 @@ stat_map = {
 
 def create_pokemon_by_name(name):
     """
-    Get a pokemon by its name.
+    Create a pokemon by its name.
     
     Args:
         name (string): The name of the pokemon.
-
-    Returns:
-        New Pokemon object, with no learned moves
 
     Raises:
         ValueError: if pokemon does not exist
@@ -70,9 +63,7 @@ def create_pokemon_by_name(name):
     """
     response = requests.get(BASE_POKE_URL + "/pokemon/" + name)
     if response.status_code == 200:
-        data = response.json()  # Parse the JSON response
-        # print(data)
-        forms = [form['name'] for form in data['forms']]
+        data = response.json()
         stats = Stats(hp=[0, 0], 
                       defense=[0, 0], 
                       attack=[0, 0], 
@@ -88,64 +79,69 @@ def create_pokemon_by_name(name):
 
         global global_id
         pokemon = Pokemon(
+            id=global_id,
             game_id=data['id'],
             name=data['name'],
-            base_experience=data['base_experience'],
-            height=data['height'],
-            order=data['order'],
-            weight=data['weight'],
             ability="",
-            forms=forms,
             learned_moves=[],
-            species=data['species']['name'],
             stats=stats,
             total_effort=0)
-        
-        try:
-            with get_db_connection() as conn:
-                cursor = conn.cursor()
-                # Insert into `pokemon`
-                cursor.execute("""
-                    INSERT INTO pokemon (id, game_id, name, base_experience, height, "order", weight, ability, species, total_effort)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    pokemon.id, pokemon.game_id, pokemon.name, pokemon.base_experience, pokemon.height,
-                    pokemon.order, pokemon.weight, pokemon.ability, pokemon.species, pokemon.total_effort
-                ))
+        global_id += 1
 
-                # Insert into `learned_moves`
-                for move in pokemon.learned_moves:
-                    cursor.execute("INSERT INTO learned_moves (pokemon_id, move) VALUES (?, ?)", (pokemon.id, move))
-
-                # Insert into `stats`
-                cursor.execute("""
-                    INSERT INTO stats (
-                        pokemon_id, hp_base, hp_effort,
-                        attack_base, attack_effort,
-                        defense_base, defense_effort,
-                        special_attack_base, special_attack_effort,
-                        special_defense_base, special_defense_effort,
-                        speed_base, speed_effort
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    pokemon.id,
-                    pokemon.stats.hp[0], pokemon.stats.hp[1],
-                    pokemon.stats.attack[0], pokemon.stats.attack[1],
-                    pokemon.stats.defense[0], pokemon.stats.defense[1],
-                    pokemon.stats.special_attack[0], pokemon.stats.special_attack[1],
-                    pokemon.stats.special_defense[0], pokemon.stats.special_defense[1],
-                    pokemon.stats.speed[0], pokemon.stats.speed[1]
-                ))
-                conn.commit()
-
-                logger.info("Pokemon successfully added to the database: %s", name)
-
-        except sqlite3.Error as e:
-            logger.error("Database error: %s", str(e))
-            raise e
+        create_pokemon_by_object(pokemon)
     else:
         logger.error("Pokemon does not exist: %s", name)
         raise ValueError("This pokemon does not exist")
+
+def create_pokemon_by_object(pokemon):
+    """
+    Create a pokemon with an object.
+    
+    Args:
+        pokemon (Pokemon): The Pokemon object.
+
+    Raises:
+        sqlite3.Error: For any other database errors
+    """
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO pokemon (id, game_id, name, ability, total_effort)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                pokemon.id, pokemon.game_id, pokemon.name, 
+                pokemon.ability, pokemon.total_effort
+            ))
+
+            for move in pokemon.learned_moves:
+                cursor.execute("INSERT INTO learned_moves (pokemon_id, move) VALUES (?, ?)", (pokemon.id, move))
+
+            cursor.execute("""
+                INSERT INTO stats (
+                    pokemon_id, hp_base, hp_effort,
+                    attack_base, attack_effort,
+                    defense_base, defense_effort,
+                    special_attack_base, special_attack_effort,
+                    special_defense_base, special_defense_effort,
+                    speed_base, speed_effort
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                pokemon.id,
+                pokemon.stats.hp[0], pokemon.stats.hp[1],
+                pokemon.stats.attack[0], pokemon.stats.attack[1],
+                pokemon.stats.defense[0], pokemon.stats.defense[1],
+                pokemon.stats.special_attack[0], pokemon.stats.special_attack[1],
+                pokemon.stats.special_defense[0], pokemon.stats.special_defense[1],
+                pokemon.stats.speed[0], pokemon.stats.speed[1]
+            ))
+            conn.commit()
+
+            logger.info("Pokemon successfully added to the database: %s", pokemon.name)
+
+    except sqlite3.Error as e:
+        logger.error("Database error: %s", str(e))
+        raise e
 
 def get_pokemon_by_id(pokemon_id):
     """
@@ -164,7 +160,7 @@ def get_pokemon_by_id(pokemon_id):
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT id, game_id, name, base_experience, height, "order", weight, ability, species, total_effort
+                SELECT id, game_id, name, ability, total_effort
                 FROM pokemon WHERE id = ?
             """, (pokemon_id,))
             pokemon_data = cursor.fetchone()
@@ -174,8 +170,8 @@ def get_pokemon_by_id(pokemon_id):
             
             # Map to fields
             (
-                id, game_id, name, base_experience, height, order, weight, 
-                ability, species, total_effort
+                id, game_id, name, 
+                ability, total_effort
             ) = pokemon_data
 
             # Retrieve learned moves
@@ -211,13 +207,8 @@ def get_pokemon_by_id(pokemon_id):
                 id=id,
                 game_id=game_id,
                 name=name,
-                base_experience=base_experience,
-                height=height,
-                order=order,
-                weight=weight,
                 ability=ability,
                 learned_moves=learned_moves,
-                species=species,
                 stats=stats,
                 total_effort=total_effort,
             )
@@ -261,7 +252,7 @@ def add_move_to_pokemon(pokemon_id, move_name):
         else:
             raise ValueError("This pokemon already knows 4 moves")
     else:
-        raise ValueError("This pokemon cannot learn this move")
+        raise ValueError(pokemon.name + " cannot learn " + move_name)
     
 def remove_move_from_pokemon(pokemon_id, move_name):
     """
@@ -329,12 +320,11 @@ def distribute_effort_values(pokemon_id, evs):
         if increase + total_effort > 510:
             effort_values[i] = 510 - total_effort
             total_effort = 510
-            return
+            break
         else:
             effort_values[i] = increase
             total_effort += increase
         i+=1
-    
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
