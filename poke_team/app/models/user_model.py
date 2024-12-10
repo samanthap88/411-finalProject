@@ -148,3 +148,24 @@ def login(username:str, password:str)->None:
     except sqlite3.Error as e:
         logger.error("Database error: %s", str(e))
         raise e
+    
+def clear_user() -> None:
+    """
+    Recreates the user table, effectively deleting all user.
+
+    Raises:
+        sqlite3.Error: If any database error occurs.
+    """
+    try:
+        with open(os.getenv("SQL_CREATE_TABLE_PATH", "/app/sql/create_user_table.sql"), "r") as fh:
+            create_table_script = fh.read()
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.executescript(create_table_script)
+            conn.commit()
+
+            logger.info("Users cleared successfully.")
+
+    except sqlite3.Error as e:
+        logger.error("Database error while clearing meals: %s", str(e))
+        raise e

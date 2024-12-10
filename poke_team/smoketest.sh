@@ -53,6 +53,11 @@ check_db() {
 #
 ###############################################
 
+clear_user() {
+  echo "Clearing the user table..."
+  curl -s -X DELETE "$BASE_URL/clear-users" | grep -q '"status": "success"'
+}
+
 create_account() {
   username=$1
   password=$2
@@ -114,9 +119,12 @@ update_password(){
 #
 check_health
 check_db
-# create_account "user" "pass"
-# update_password "user" "new"
-# login "user" "new"
+
+clear_user
+
+create_account "user" "pass"
+update_password "user" "new"
+login "user" "new"
 
 ###############################################
 #

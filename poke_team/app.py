@@ -164,6 +164,22 @@ def login() -> Response:
         app.logger.error("Failed to login user: %s", str(e))
         return make_response(jsonify({'error': str(e)}), 500)
 
+@app.route('/api/clear-users', methods=['DELETE'])
+def clear_users() -> Response:
+    """
+    Route to clear all users (recreates the table).
+
+    Returns:
+        JSON response indicating success of the operation or error message.
+    """
+    try:
+        app.logger.info("Clearing the Pokemon")
+        user_model.clear_user()
+        return make_response(jsonify({'status': 'success'}), 200)
+    except Exception as e:
+        app.logger.error(f"Error clearing catalog: {e}")
+        return make_response(jsonify({'error': str(e)}), 500)
+    
 @app.route('/api/create-pokemon-by-name/<string:name>', methods=['POST'])
 def create_pokemon_by_name(name: str) -> Response:
     """
